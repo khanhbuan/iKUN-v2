@@ -118,7 +118,6 @@ class RMOT_Dataset(Dataset):
         self.exp_key = 'expression_new'  # The processed "expression" tag
         self.data = self._parse_data()
         self.data_keys = list(self.data.keys())
-        self.exp2id = {exp: idx for idx, exp in ID2EXP.items()}
 
     def _parse_data(self):
         labels = json.load(open(join(self.opt.save_root, 'Refer-KITTI_labels.json')))
@@ -286,11 +285,9 @@ class RMOT_Dataset(Dataset):
                 target_labels[i]
                 for i in sampled_target_idx
             ]
-            exp_id = self.exp2id[sampled_target_exp[0]]
         elif self.mode == 'test':
             sampled_target_exp = target_expressions
             sampled_target_label = target_labels
-            exp_id = -1
 
         sampled_target_label = torch.tensor(
             sampled_target_label,
@@ -302,7 +299,7 @@ class RMOT_Dataset(Dataset):
             expressions=','.join(expressions),
             target_expressions=','.join(sampled_target_exp),
             target_labels=sampled_target_label,
-            expression_id=exp_id,
+            # expression_id=exp_id,
             start_idx=start_idx,
             stop_idx=stop_idx,
             data_key=data_key,

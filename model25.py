@@ -208,12 +208,17 @@ class Model(nn.Module):
         self.text_fc = self.get_text_fc(use_ln=False)
         self._freeze_text_encoder()
 
+        """
         self.pos_enc = nn.Sequential(
             MLP(self.dim*5//2, self.dim, self.dim, num_layers=2),
             # exp 46 moi co layernorm
             nn.LayerNorm(self.dim, eps=1e-12),
         )
-
+        """
+        self.pos_enc = nn.Sequential(
+            MLP(5, self.dim, self.dim, num_layers=2),
+            nn.LayerNorm(self.dim, eps=1e-12),
+        )
         if self.opt.kum_mode == 'cascade attention':
             self.fusion_visual_textual = nn.ModuleList([
                 nn.MultiheadAttention(
@@ -291,7 +296,7 @@ class Model(nn.Module):
         # spatial pooling
         feat = F.adaptive_avg_pool1d(feat, 1).squeeze()  # [bt,c,l]->[bt,c]
         # temporal pooling
-        if len(feat.shape) ==1:
+        if len(feat.shape) == 1:
             feat = feat[None,:]
         feat = rearrange(feat, '(b t) c -> b c t', b=bs)
         feat = F.adaptive_avg_pool1d(feat, 1).squeeze()  # [b,c]
@@ -325,7 +330,8 @@ class Model(nn.Module):
     def visual_fuse(self, bbox, text_feat=None, kum_mode=None):
         b, t = bbox.size()[:2]
 
-        pos_feat = self.pos_enc(gen_sineembed_for_position(bbox))
+        # pos_feat = self.pos_enc(gen_sineembed_for_position(bbox))
+        pos_feat = self.pos_enc(bbox)
         pos_feat = rearrange(pos_feat, 'b t c -> (b t) c')[None,:,:]
 
         if kum_mode is not None:

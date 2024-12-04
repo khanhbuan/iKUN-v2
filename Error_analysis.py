@@ -5,7 +5,7 @@ from utils import *
 import pandas as pd
 import argparse
 
-def draw_NeuralSORT(video):
+def draw_NeuralSORT(video, exp):
     tracks_1 = np.loadtxt(os.path.join('./plugins/NeuralSORT', video, 'car', 'predict.txt'), delimiter=',')
     if len(tracks_1.shape) == 2:
         tracks = tracks_1
@@ -22,36 +22,27 @@ def draw_NeuralSORT(video):
     tracks = tracks[np.lexsort([tracks[:, 1], tracks[:, 0]])]  # frame -> ID
     lines_full = tracks
 
-    cnt_full = 0
-
     vid = os.path.join("./plugins/Refer-KITTI/KITTI/training/image_02", video)
 
     H, W = RESOLUTION[video]
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(os.path.join("./plugins/my_exp3/visualize", video + ".mp4"), fourcc, 10.0, (W, H))
-    
+
+    os.makedirs(f"./plugins/{exp}/NeuralSORT", exist_ok=True)
+    out = cv2.VideoWriter(os.path.join(f"./plugins/{exp}/NeuralSORT", video + ".mp4"), fourcc, 10.0, (W, H))
+
     frames = sorted(os.listdir(vid))
     for frame in frames:
         img = cv2.imread(os.path.join("./plugins/Refer-KITTI/KITTI/training/image_02", video, frame))
         # add bounding box for all tracks
-        while True:
-            if cnt_full >= len(lines_full):
-                break
-            line = lines_full[cnt_full]
-            frame_id = int(float(line[0]))
-            if int(frame.split(".")[0]) < frame_id:
-                break
-            elif int(frame.split(".")[0]) > frame_id:
-                cnt_full = cnt_full + 1
-            else:
-                obj_id = int(float(line[1]))
+        for line in lines_full:
+            frame_id = int(line[0])
+            if int(frame.split(".")[0]) == frame_id:
                 bbox = float(line[2]), float(line[3]), float(line[4]), float(line[5])
                 start = int(bbox[0]), int(bbox[1])
                 end = int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3])
-                color = ((obj_id*13)%255, (obj_id*29)%255, obj_id)
+                color = (0, 255, 0) # green
                 thickness = 3
                 cv2.rectangle(img, start, end, color, thickness)
-                cnt_full = cnt_full + 1
 
         out.write(img)
 
@@ -65,7 +56,6 @@ def draw(video, seq, exp):
         lines_predict = file.readlines()
 
     cnt_gt = 0
-    cnt_predict = 0
 
     vid = os.path.join("./plugins/Refer-KITTI/KITTI/training/image_02", video)
 
@@ -98,23 +88,16 @@ def draw(video, seq, exp):
                 cnt_gt = cnt_gt + 1
         
         # add bounding box for prediction
-        while True:
-            if cnt_predict >= len(lines_predict):
-                break
-            line = lines_predict[cnt_predict].strip().split(",")
-            frame_id = int(float(line[0]))
-            if int(frame.split(".")[0]) < frame_id:
-                break
-            elif int(frame.split(".")[0]) > frame_id:
-                cnt_predict = cnt_predict + 1
-            else:
+        for line_predict in lines_predict:
+            line = line_predict.strip().split(",")
+            frame_id = int(line[0].split(".")[0])
+            if int(frame.split(".")[0]) == frame_id:
                 bbox = float(line[2]), float(line[3]), float(line[4]), float(line[5])
                 start = int(bbox[0]), int(bbox[1])
                 end = int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3])
                 color = (0, 0, 255) # red
                 thickness = 3
                 cv2.rectangle(img, start, end, color, thickness)
-                cnt_predict = cnt_predict + 1
 
         out.write(img)
     
@@ -128,16 +111,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     path = f"./plugins/{args.exp}/results/pedestrian_detailed.csv"
-    print(path)
     data = pd.read_csv(path, delimiter=',', header=0)
     data = data.sort_values(by="HOTA___AUC")
-    
+
     motion_word = ["moving", "motion", "swift", "rapid", "quicker", "changing", "slowed", "stopping", "making", "came", "exceed", "used", "decelerating", "slowing", 
                    "rapid", "faster", "speedier", "transferring", "outpace", "applied", "move", "relocating", "turning", "driving", "coming", "standing", "walking", 
                    "movement", "transit", "parked", "parking", "parked,", "stationary", "going", "traveling", "turned"]
-    
-    color_word = ["white", "blue", "yellow", "green", "silver", "red", "color", "black", "light", "direction"]
-    
+    color_word = ["white", "blue", "yellow", "green", "silver", "red", "color", "black", "light", "direction", "opposite"]
     pos_word = ["front", "positioned", "located", "situated", "ahead", "right", "left", "before", "camera", "upright"]
     
     cases = {}
@@ -169,7 +149,7 @@ if __name__ == "__main__":
             if not check:
                 for word in pos_word:
                     if word in seq2:
-                        print(video, " ".join(seq2))
+                        print(video, expression_conversion(seq))
                         if args.draw:
                             draw(video, seq, exp=args.exp)
                         break

@@ -107,7 +107,6 @@ for epoch in range(resume_epoch + 1, opt.max_epoch):
     for batch_idx, data in enumerate(dataloader_train):
         # load
         expression = data['target_expressions']
-        expression_ids = data['expression_id'].cuda()
         # forward
         inputs = dict(
             local_img=data['cropped_images'].cuda(),

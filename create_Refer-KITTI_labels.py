@@ -34,11 +34,13 @@ for video in RESOLUTION.keys():
 
                     if "category" not in labels[video][object_id][frame_id].keys():
                         labels[video][object_id][frame_id]["category"] = []
-                    for pronoun in WORDS_MAPPING.keys():
-                        if (pronoun in expression) and (WORDS_MAPPING[pronoun] not in labels[video][object_id][frame_id]["category"]):
-                            labels[video][object_id][frame_id]["category"].append(WORDS_MAPPING[pronoun])
-                            break
-                    labels[video][object_id][frame_id]["category"].sort()
+                        for pronoun in WORDS_MAPPING.keys():
+                            if pronoun in expression.split(" "):
+                                if WORDS_MAPPING[pronoun] == "car":
+                                    labels[video][object_id][frame_id]["category"].append("car")
+                                else:
+                                    labels[video][object_id][frame_id]["category"].append("pedestrian")
+                                break
                     
                     if "expression_new" not in labels[video][object_id][frame_id].keys():
                         labels[video][object_id][frame_id]["expression_new"] = []
