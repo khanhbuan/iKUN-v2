@@ -1,6 +1,7 @@
 import os
 import json
 import random
+import argparse
 import numpy as np
 from PIL import Image
 from os.path import join
@@ -30,14 +31,23 @@ def get_dataloader(mode, opt, dataset='RMOT_Dataset', show=False, **kwargs):
             drop_last=True,
             num_workers=opt.num_workers,
         )
-    elif mode == 'test':
-        dataloader = DataLoader(
-            dataset,
-            batch_size=opt.test_bs,
-            shuffle=False,
-            drop_last=False,
-            num_workers=opt.num_workers,
-        )
+    else:
+        if isinstance(dataset, RMOT_Dataset):
+            dataloader = DataLoader(
+                dataset,
+                batch_size=1,
+                shuffle=False,
+                drop_last=False,
+                num_workers=opt.num_workers,
+            )
+        else:
+            dataloader = DataLoader(
+                dataset,
+                batch_size=opt.test_bs,
+                shuffle=False,
+                drop_last=False,
+                num_workers=opt.num_workers,
+            )
     return dataloader
 
 
@@ -97,12 +107,7 @@ def filter_gt_expressions(gt_expressions, KEY=None):
                     break
     return OUT_EXPS
 
-
 class RMOT_Dataset(Dataset):
-    """
-    For the "car" + "color+direction+location" settings
-    For the "car" + "status" settings
-    """
     def __init__(self, mode, opt, only_car=False):
         super().__init__()
         assert mode in ('train', 'test')
@@ -160,6 +165,7 @@ class RMOT_Dataset(Dataset):
                         continue
                     # load box
                     x, y, w, h = frame_label['bbox']
+                    category = frame_label['category']
                     # save
                     curr_data['expression'].append(exps)
                     curr_data['object_id'] = obj_id
@@ -167,6 +173,7 @@ class RMOT_Dataset(Dataset):
                     curr_data['target_expression'].append(tgt_exps)
                     curr_data['target_labels'].append(tgt_labels)
                     curr_data['bbox'].append([frame_id, x * W, y * H, (x + w) * W, (y + h) * H])
+                    curr_data['category'].append(category)
                 if len(curr_data['bbox']) > self.opt.sample_frame_len:
                     data[obj_key] = curr_data.copy()
         return data
@@ -176,12 +183,7 @@ class RMOT_Dataset(Dataset):
             crops = []
             for i, idx in enumerate(indices):
                 temp_img = images[i].crop(data['bbox'][idx][1:])
-                width, height = temp_img.size
-                if height == 0 or width == 0:
-                    print("video: ", data["video"])
-                    print("object_id: ", data["object_id"])
-                    print("frame: ", data['bbox'][idx][0])
-                    print("bbox:", data['bbox'][idx][1:])
+                width, height = temp_img.size                  
                 crops.append(self.transform[0](temp_img))
             crops = torch.stack(crops, dim=0)
         elif mode == 'big':
@@ -236,17 +238,7 @@ class RMOT_Dataset(Dataset):
                 )
             ) for idx in sampled_indices
         ]
-        transform = T.ToTensor()
-        images2 = [
-            transform(Image.open(
-                join(
-                    self.opt.data_root,
-                    'KITTI/training/image_02/{}/{:0>6d}.png'
-                        .format(video, data['bbox'][idx][0])
-                )
-            )) for idx in sampled_indices
-        ]
-        images2 = torch.stack(images2).to(torch.uint8)
+
         # load expressions
         expressions = list()
         for idx in sampled_indices:
@@ -257,20 +249,19 @@ class RMOT_Dataset(Dataset):
         cropped_images = self._crop_image(
             images, sampled_indices, data, 'small'
         )  # [T,C,H,W]
-
-        # global images
-        global_images = torch.stack([
-            self.transform[2](image)
-            for image in images
-        ], dim=0)
-
+        
         # load bounding box
         H, W = RESOLUTION[video]
         bbox = []
         for idx in sampled_indices:
             box = data['bbox'][idx]
+            category = data['category'][idx]
+            if category[0] == 'car':
+                tag = 0
+            else:
+                tag = 1
             x, y, w, h = box[1]*1.0/W, box[2]*1.0/H, (box[3]-box[1])*1.0/W, (box[4]-box[2])*1.0/H
-            bbox.append([x, y, w, h])
+            bbox.append([x, y, w, h, tag])
         bbox = torch.tensor(bbox)
 
         # sample target expressions
@@ -308,7 +299,6 @@ class RMOT_Dataset(Dataset):
         return dict(
             bbox=bbox,
             cropped_images=cropped_images,
-            global_images=global_images,
             expressions=','.join(expressions),
             target_expressions=','.join(sampled_target_exp),
             target_labels=sampled_target_label,
@@ -334,6 +324,7 @@ class Track_Dataset(Dataset):
         self.transform = {idx: get_transform(self.mode, self.opt, idx) for idx in (0, 1, 2)}
         self.data = self._parse_data()
 
+
     def _parse_data(self):
         sample_length = self.opt.sample_frame_len
         sample_stride = self.opt.sample_frame_stride
@@ -342,6 +333,7 @@ class Track_Dataset(Dataset):
             # load tracks
             tracks_1 = np.loadtxt(join(self.opt.track_root, video, 'car', 'predict.txt'), delimiter=',')
             if len(tracks_1.shape) == 2:
+                tracks_1 = np.concatenate((tracks_1, np.resize(np.array([[0]]), (tracks_1.shape[0], 1))), axis=1)
                 tracks = tracks_1
                 max_obj_id = max(tracks_1[:, 1])
             else:
@@ -349,6 +341,7 @@ class Track_Dataset(Dataset):
                 max_obj_id = 0
             tracks_2 = np.loadtxt(join(self.opt.track_root, video, 'pedestrian', 'predict.txt'), delimiter=',')
             if len(tracks_2.shape) == 2:
+                tracks_2 = np.concatenate((tracks_2, np.resize(np.array([[1]]), (tracks_2.shape[0], 1))), axis=1)
                 tracks_2[:, 1] += max_obj_id
                 tracks = np.concatenate((tracks, tracks_2), axis=0)
             tracks = tracks[np.lexsort([tracks[:, 0], tracks[:, 1]])]  # ID -> frame
@@ -373,7 +366,7 @@ class Track_Dataset(Dataset):
                     for f_idx in range(f_min, f_max + 1, sample_stride):
                         f_stop = min(f_max, f_idx + sample_length - 1)
                         f_start = max(f_min, f_stop - sample_length + 1)
-                        tracklets = tracks_id[np.isin(tracks_id[:, 0], range(f_start, f_stop + 1))][:, :6]
+                        tracklets = tracks_id[np.isin(tracks_id[:, 0], range(f_start, f_stop + 1))]
                         tracklets[:, 4:6] += tracklets[:, 2:4]
                         tracklets = tracklets.astype(int)
                         assert (f_stop - f_start + 1) == len(tracklets)
@@ -416,11 +409,7 @@ class Track_Dataset(Dataset):
                 )
             ) for bbox in sampled_tracklets
         ]
-        transform = T.ToTensor()
-        images2 = [
-            transform(Image.open(join(self.opt.data_root,'KITTI/training/image_02/{}/{:0>6d}.png'.format(video, bbox[0])))) for bbox in sampled_tracklets
-        ]
-        images2 = torch.stack(images2).to(torch.uint8)
+        
         # crop images
         cropped_images = torch.stack(
             [self.transform[0](
@@ -429,17 +418,11 @@ class Track_Dataset(Dataset):
             dim=0
         )
 
-        # global images
-        global_images = torch.stack([
-            self.transform[2](image)
-            for image in images
-        ], dim=0)
-
         H, W = RESOLUTION[video]
         bbox = []
         for bx in sampled_tracklets:
-            x, y, w, h = bx[2]*1.0/W, bx[3]*1.0/H, (bx[4]-bx[2])*1.0/W, (bx[5]-bx[3])*1.0/H
-            bbox.append([x, y, w, h])
+            x, y, w, h, tag = bx[2]*1.0/W, bx[3]*1.0/H, (bx[4]-bx[2])*1.0/W, (bx[5]-bx[3])*1.0/H, bx[10]
+            bbox.append([x, y, w, h, tag])
         bbox = torch.tensor(bbox, dtype=torch.float)
 
         return dict(
@@ -449,7 +432,6 @@ class Track_Dataset(Dataset):
             start_frame=start_frame,
             stop_frame=stop_frame,
             cropped_images=cropped_images,
-            global_images=global_images,
             expression_raw=expression,
             expression_new=expression_converted,
         )
@@ -459,5 +441,11 @@ class Track_Dataset(Dataset):
 
 
 if __name__ == '__main__':
-    dataset = RMOT_Dataset('train', opt)
-    print(dataset.__getitem__(0).keys())
+    dataloader = get_dataloader('test', opt, 'Track_Dataset')
+    for batch in dataloader:
+        person_indices = (batch['bbox'][:, :, 4] == 1.0).nonzero(as_tuple=False)
+        car_indices = (batch['bbox'][:, :, 4] == 0.0).nonzero(as_tuple=False)
+
+        print(person_indices.shape)
+        print(car_indices.shape)
+        print("\n")

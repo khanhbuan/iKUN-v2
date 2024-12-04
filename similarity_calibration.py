@@ -68,7 +68,6 @@ def similarity_calibration(TEXT_FEAT_DICT, CLS_DICT, a, b, tau):
             for frame, frame_value in obj_value.items():
                 for exp, exp_value in frame_value.items():
                     exp_new = expression_conversion(exp)
-                    print(video, obj_id, frame, exp_new)
                     feat = np.array(TEXT_FEAT_DICT['test'][exp_new]['feature'])[None, :]
 
                     feat = torch.from_numpy(feat).cuda()

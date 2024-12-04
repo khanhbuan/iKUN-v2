@@ -10,24 +10,11 @@ from torchvision import transforms as T
 from CLIPReID.model import create_config, make_model
 from utils import *
 
-def get_model_8(opt, name='Model'):
+def get_model_13(opt, name='Model'):
     model = eval(name)(opt)
     model.to("cuda")
     model = nn.DataParallel(model)
     return model
-
-def xcorr_depthwise(x, kernel):
-    """
-    depthwise cross correlation
-    ref: https://github.com/JudasDie/SOTS/blob/SOT/lib/models/sot/head.py#L227
-    """
-    batch = kernel.size(0)
-    channel = kernel.size(1)
-    x = x.view(1, batch*channel, x.size(2))
-    kernel = kernel.view(batch*channel, 1, kernel.size(2))
-    out = F.conv1d(x, kernel, groups=batch*channel)
-    out = out.view(batch, channel, out.size(2))
-    return out
 
 def gen_sineembed_for_position(pos_tensor, img_dim=1024):
     # bs, n_query, _ = pos_tensor.size()
@@ -52,6 +39,19 @@ def gen_sineembed_for_position(pos_tensor, img_dim=1024):
 
     pos = torch.cat((pos_y, pos_x, pos_w, pos_h), dim=2)
     return pos
+
+def xcorr_depthwise(x, kernel):
+    """
+    depthwise cross correlation
+    ref: https://github.com/JudasDie/SOTS/blob/SOT/lib/models/sot/head.py#L227
+    """
+    batch = kernel.size(0)
+    channel = kernel.size(1)
+    x = x.view(1, batch*channel, x.size(2))
+    kernel = kernel.view(batch*channel, 1, kernel.size(2))
+    out = F.conv1d(x, kernel, groups=batch*channel)
+    out = out.view(batch, channel, out.size(2))
+    return out
 
 class MLP(nn.Module):
     """ Very simple multi-layer perceptron (also called FFN)"""
@@ -223,9 +223,9 @@ class Model(nn.Module):
 
         self.proj = MLP(self.reid_dim, self.dim, self.dim, num_layers=2)
 
-        self.pos_enc = nn.Sequential(
-            MLP(self.dim*2, self.dim, self.dim, num_layers=2),
-        )
+        self.pos_enc = MLP(self.dim*2, self.dim, self.dim, num_layers=2)
+
+        self.combine = MLP(self.dim*3, self.dim, self.dim, num_layers=1)
 
         if self.opt.kum_mode == 'cascade attention':
             self.fusion_visual_textual = nn.MultiheadAttention(
@@ -286,7 +286,7 @@ class Model(nn.Module):
     def forward(self, x, epoch=1e5):
         output = dict()
         textual_hidden, textual_feat = self.textual_encoding(x['exp'])
-        
+
         person_indices = (x['bbox'][:, :, 4] == 1).nonzero(as_tuple=False)
         car_indices = (x['bbox'][:, :, 4] == 0).nonzero(as_tuple=False)
 
@@ -307,13 +307,12 @@ class Model(nn.Module):
         embed = rearrange(embed, 'b t c -> (b t) c')
         embed = self.proj(embed[None,:,:])
 
-
         if self.opt.kum_mode and (epoch >= self.opt.tg_epoch):
             fused_feat = self.visual_fuse(
-                x['local_img'], embed, x['bbox'], textual_hidden, self.opt.kum_mode
+                x['local_img'], x['bbox'], embed, textual_hidden, self.opt.kum_mode
             )
         else:
-            fused_feat = self.visual_fuse(x['local_img'], embed, x['bbox'])
+            fused_feat = self.visual_fuse(x['local_img'])
         logits = F.cosine_similarity(fused_feat, textual_feat)
         output['logits'] = logits
         output['vis_feat'] = fused_feat
@@ -351,15 +350,15 @@ class Model(nn.Module):
         vis_feat = rearrange(vis_feat, 'l bt c -> bt c l')
         return vis_feat
 
-    def visual_fuse(self, local_img, embed, bbox, text_feat=None, kum_mode=None):
+    def visual_fuse(self, local_img, bbox=None, embed=None, text_feat=None, kum_mode=None):
         b, t = local_img.size()[:2]
         local_img = rearrange(local_img, 'b t c h w -> (b t) c h w')
         local_feat = self.clip.encode_image(local_img)[None,:,:]  # [1, bt,c]
 
         q_pos = self.pos_enc(gen_sineembed_for_position(bbox))
         q_pos = rearrange(q_pos, 'b t c -> (b t) c')[None,:,:]
-
-        local_feat = local_feat + embed + q_pos
+        
+        local_feat = self.combine(torch.cat((local_feat, q_pos, embed), dim=2))
 
         if kum_mode is not None:
             fused_feat = self.cross_modal_fusion(

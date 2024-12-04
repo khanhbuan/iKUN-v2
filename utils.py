@@ -62,6 +62,7 @@ WORDS_MAPPING = {
     'persons':          'pedestrian',
     'those':            'pedestrian',
     'pedestrians':      'pedestrian',
+    'pedestrian':       'pedestrian',
     'individuals':      'pedestrian',
     'someone':          'pedestrian',
     'folks':            'pedestrian',
@@ -96,7 +97,6 @@ WORDS_MAPPING = {
     'woman':            'women',
     'womens':           'women',
     'fairer':           'women',
-    'light-colors':     'light-color',
 }
 
 WORDS = {

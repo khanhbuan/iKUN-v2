@@ -7,10 +7,10 @@ import torch.nn.functional as F
 from clip.model import CLIP, convert_weights
 from einops import rearrange
 from torchvision import transforms as T
-from CLIPReID.model import create_config, make_model
+from TransReID.model import load_config, make_model
 from utils import *
 
-def get_model_8(opt, name='Model'):
+def get_model_15(opt, name='Model'):
     model = eval(name)(opt)
     model.to("cuda")
     model = nn.DataParallel(model)
@@ -199,26 +199,27 @@ class Model(nn.Module):
         )
         self.clip = self.clip.float()
         self.dim = 1024
-        self.reid_dim = 1280
+        self.reid_dim=3840
         self.img_fc = self.get_img_fc(use_ln=False)
         self.text_fc = self.get_text_fc(use_ln=False)
         self._freeze_text_encoder()
 
+        cfg1 = load_config("./TransReID/Market/vit_transreid_stride.yml")
+        self.model1 = make_model(cfg1, num_class=751, camera_num=6, view_num=0)
+        self.model1.load_param("./TransReID/Market/vit_transreid_market.pth")
+        self.model1.eval()
+        self.model1.cuda()
         self.transform_person = T.Resize((256, 128)).cuda()
-        self.transform_car = T.Resize((256, 256)).cuda()
-
-        cfg1 = create_config("./CLIPReID/person/vit_clipreid.yml")
-        self.person_model = make_model(cfg1, num_class=751, camera_num=6, view_num=0)
-        self.person_model.load_param(cfg1.MODEL.WEIGHTS)
-        self.person_model.cuda().eval()
-        for param in self.person_model.parameters():
+        for param in self.model1.parameters():
             param.requires_grad = False
 
-        cfg2 = create_config("./CLIPReID/VehicleID/vit_clipreid.yml")
-        self.car_model = make_model(cfg2, num_class=13164, camera_num=0, view_num=2)
-        self.car_model.load_param(cfg2.MODEL.WEIGHTS)
-        self.car_model.cuda().eval()
-        for param in self.car_model.parameters():
+        cfg2 = load_config("./TransReID/VehicleID/vit_transreid_stride.yml")
+        self.model2 = make_model(cfg2, num_class=13164, camera_num=0, view_num=2)
+        self.model2.load_param("./TransReID/VehicleID/vit_transreid_vehicleID.pth")
+        self.model2.eval()
+        self.model2.cuda()
+        self.transform_car = T.Resize((256, 256)).cuda()
+        for param in self.model2.parameters():
             param.requires_grad = False
 
         self.proj = MLP(self.reid_dim, self.dim, self.dim, num_layers=2)
@@ -245,8 +246,8 @@ class Model(nn.Module):
         - [self.clip.positional_embedding]
         """
         for p in list(self.clip.transformer.parameters()) + \
-                 list(self.clip.ln_final.parameters()) + \
-                 [self.clip.text_projection, ]:
+                 list(self.clip.ln_final.parameters()):
+#                 [self.clip.text_projection, ]:
             p.requires_grad = False
 
     def _init_weights_function(self, m):
@@ -295,13 +296,13 @@ class Model(nn.Module):
         if len(person_indices) > 0:
             person_input = self.transform_person(x['local_img'][person_indices[:,0], person_indices[:, 1]]).to(torch.float32)
             with torch.no_grad():
-                person_embed = self.person_model(person_input, cam_label=0)
+                person_embed = self.model1(person_input, cam_label=0)
             embed[person_indices[:,0], person_indices[:, 1]] = person_embed
 
         if len(car_indices) > 0:
             car_input = self.transform_car(x['local_img'][car_indices[:,0], car_indices[:, 1]]).to(torch.float32)
             with torch.no_grad():
-                car_embed = self.car_model(car_input)
+                car_embed = self.model2(car_input, view_label=0)
             embed[car_indices[:,0], car_indices[:, 1]] = car_embed
 
         embed = rearrange(embed, 'b t c -> (b t) c')

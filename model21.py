@@ -5,31 +5,18 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from clip.model import CLIP, convert_weights
+from torch import randn
 from einops import rearrange
 from torchvision import transforms as T
-from CLIPReID.model import create_config, make_model
 from utils import *
 
-def get_model_8(opt, name='Model'):
+def get_model_21(opt, name='Model'):
     model = eval(name)(opt)
     model.to("cuda")
     model = nn.DataParallel(model)
     return model
 
-def xcorr_depthwise(x, kernel):
-    """
-    depthwise cross correlation
-    ref: https://github.com/JudasDie/SOTS/blob/SOT/lib/models/sot/head.py#L227
-    """
-    batch = kernel.size(0)
-    channel = kernel.size(1)
-    x = x.view(1, batch*channel, x.size(2))
-    kernel = kernel.view(batch*channel, 1, kernel.size(2))
-    out = F.conv1d(x, kernel, groups=batch*channel)
-    out = out.view(batch, channel, out.size(2))
-    return out
-
-def gen_sineembed_for_position(pos_tensor, img_dim=1024):
+def gen_sineembed_for_position(pos_tensor, img_dim=2048):
     # bs, n_query, _ = pos_tensor.size()
     # sineembed_tensor = torch.zeros(n_query, bs, 2048)
     scale = 2 * math.pi
@@ -52,6 +39,19 @@ def gen_sineembed_for_position(pos_tensor, img_dim=1024):
 
     pos = torch.cat((pos_y, pos_x, pos_w, pos_h), dim=2)
     return pos
+
+def xcorr_depthwise(x, kernel):
+    """
+    depthwise cross correlation
+    ref: https://github.com/JudasDie/SOTS/blob/SOT/lib/models/sot/head.py#L227
+    """
+    batch = kernel.size(0)
+    channel = kernel.size(1)
+    x = x.view(1, batch*channel, x.size(2))
+    kernel = kernel.view(batch*channel, 1, kernel.size(2))
+    out = F.conv1d(x, kernel, groups=batch*channel)
+    out = out.view(batch, channel, out.size(2))
+    return out
 
 class MLP(nn.Module):
     """ Very simple multi-layer perceptron (also called FFN)"""
@@ -198,45 +198,45 @@ class Model(nn.Module):
             input_resolution=224,
         )
         self.clip = self.clip.float()
-        self.dim = 1024
-        self.reid_dim = 1280
+        self.dim = 2048
+        self.text_dim = 1024
         self.img_fc = self.get_img_fc(use_ln=False)
+        self.img_fc_2 = self.get_img_fc(use_ln=False)
         self.text_fc = self.get_text_fc(use_ln=False)
         self._freeze_text_encoder()
 
-        self.transform_person = T.Resize((256, 128)).cuda()
-        self.transform_car = T.Resize((256, 256)).cuda()
+        # exp31: num_layers=3
+        # exp32: num_layers=2
+        # exp33: num_layers=4
+        # exp34: num_layers=5
+        self.pos_enc = MLP(4, self.dim, self.dim, num_layers=5)
+        self.fuse = MLP(self.text_dim*2, self.text_dim, self.text_dim, num_layers=2)
 
-        cfg1 = create_config("./CLIPReID/person/vit_clipreid.yml")
-        self.person_model = make_model(cfg1, num_class=751, camera_num=6, view_num=0)
-        self.person_model.load_param(cfg1.MODEL.WEIGHTS)
-        self.person_model.cuda().eval()
-        for param in self.person_model.parameters():
-            param.requires_grad = False
-
-        cfg2 = create_config("./CLIPReID/VehicleID/vit_clipreid.yml")
-        self.car_model = make_model(cfg2, num_class=13164, camera_num=0, view_num=2)
-        self.car_model.load_param(cfg2.MODEL.WEIGHTS)
-        self.car_model.cuda().eval()
-        for param in self.car_model.parameters():
-            param.requires_grad = False
-
-        self.proj = MLP(self.reid_dim, self.dim, self.dim, num_layers=2)
-
-        self.pos_enc = nn.Sequential(
-            MLP(self.dim*2, self.dim, self.dim, num_layers=2),
-        )
+        local_reso = 7 * 7
+        local_scale = local_reso ** -0.5
+        self.pos_emb_local = nn.Parameter(local_scale * randn(local_reso))
 
         if self.opt.kum_mode == 'cascade attention':
-            self.fusion_visual_textual = nn.MultiheadAttention(
-                embed_dim=self.dim,
-                num_heads=4,
-                dropout=0,
-            )
+            self.fusion_visual_textual = nn.ModuleList([
+                nn.MultiheadAttention(
+                    embed_dim=self.dim,
+                    num_heads=4,
+                    dropout=0,
+                ) for _ in range(opt.num_layers)])
             
-            self.fusion_fc = nn.Linear(self.dim, self.dim)
+            self.fusion_pos_textual = nn.ModuleList([
+                nn.MultiheadAttention(
+                    embed_dim=self.dim,
+                    num_heads=4,
+                    dropout=0,
+                ) for _ in range(opt.num_layers)])
+        
+            self.fusion_fc = nn.Linear(self.text_dim, self.dim)
+            self.fusion_fc_2 = nn.Linear(self.text_dim, self.dim)
             self.fusion_ffn = FFN(self.dim, 0.1)
+            self.fusion_ffn_2 = FFN(self.dim, 0.1)
             self.fusion_drop = nn.Dropout(p=0.1)
+            self.fusion_drop_2 = nn.Dropout(p=0.1)
     
     def _freeze_text_encoder(self):
         """
@@ -286,95 +286,88 @@ class Model(nn.Module):
     def forward(self, x, epoch=1e5):
         output = dict()
         textual_hidden, textual_feat = self.textual_encoding(x['exp'])
-        
-        person_indices = (x['bbox'][:, :, 4] == 1).nonzero(as_tuple=False)
-        car_indices = (x['bbox'][:, :, 4] == 0).nonzero(as_tuple=False)
-
-        embed = torch.empty((x['local_img'].shape[0], x['local_img'].shape[1], self.reid_dim), device=x['local_img'].device)
-
-        if len(person_indices) > 0:
-            person_input = self.transform_person(x['local_img'][person_indices[:,0], person_indices[:, 1]]).to(torch.float32)
-            with torch.no_grad():
-                person_embed = self.person_model(person_input, cam_label=0)
-            embed[person_indices[:,0], person_indices[:, 1]] = person_embed
-
-        if len(car_indices) > 0:
-            car_input = self.transform_car(x['local_img'][car_indices[:,0], car_indices[:, 1]]).to(torch.float32)
-            with torch.no_grad():
-                car_embed = self.car_model(car_input)
-            embed[car_indices[:,0], car_indices[:, 1]] = car_embed
-
-        embed = rearrange(embed, 'b t c -> (b t) c')
-        embed = self.proj(embed[None,:,:])
-
 
         if self.opt.kum_mode and (epoch >= self.opt.tg_epoch):
             fused_feat = self.visual_fuse(
-                x['local_img'], embed, x['bbox'], textual_hidden, self.opt.kum_mode
+                x['local_img'], x['bbox'], textual_hidden, self.opt.kum_mode
             )
         else:
-            fused_feat = self.visual_fuse(x['local_img'], embed, x['bbox'])
+            fused_feat = self.visual_fuse(x['local_img'])
         logits = F.cosine_similarity(fused_feat, textual_feat)
         output['logits'] = logits
         output['vis_feat'] = fused_feat
         output['text_feat'] = textual_feat
         return output
 
-    def st_pooling(self, feat, bs):
+    def st_pooling(self, feat, img_fc, bs):
         # spatial pooling
-        feat = F.adaptive_avg_pool1d(feat, 1).squeeze()  # [bt,c,l]->[bt,c]
+        feat = F.adaptive_avg_pool1d(feat, 1).squeeze()  # [bt,c,hw] -> [bt,c]
         # temporal pooling
         if len(feat.shape) ==1:
             feat = feat[None,:]
         feat = rearrange(feat, '(b t) c -> b c t', b=bs)
         feat = F.adaptive_avg_pool1d(feat, 1).squeeze()  # [b,c]
         # projection
-        feat = self.img_fc(feat)
+        feat = img_fc(feat)
         return feat
 
-    def cross_modal_fusion(self, vis_feat, text_feat, b, t):
+    def cross_modal_fusion(self, vis_feat, text_feat, fusion_fc, fusion_visual_textual, fusion_ffn, fusion_drop, b, t):
         assert len(text_feat.size()) == 3
         # get textual embeddings
-        text_feat = text_feat.unsqueeze(1)  # [b,l,c]->[b,1,l,c]
+        text_feat = text_feat.unsqueeze(1)  # [b,l,c] -> [b,1,l,c]
         text_feat = text_feat.repeat([1, t, 1, 1])
         text_feat = rearrange(text_feat, 'b t l c -> (b t) l c')
-        text_feat = self.fusion_fc(text_feat)
+        text_feat = fusion_fc(text_feat)
         text_feat = rearrange(text_feat, 'bt l c -> l bt c')
         # fusion
         fused_feat = vis_feat.clone()
-        fused_feat = self.fusion_visual_textual(
-            query=fused_feat,
-            key=text_feat,
-            value=text_feat,
-        )[0]
+        for layer in fusion_visual_textual:
+            fused_feat = layer(
+                query=fused_feat,
+                key=text_feat,
+                value=text_feat,
+            )[0]
+            fused_feat = fusion_ffn(fused_feat)
+            fused_feat = fusion_drop(fused_feat)
+
         vis_feat = vis_feat * fused_feat
-        vis_feat = rearrange(vis_feat, 'l bt c -> bt c l')
+        vis_feat = rearrange(vis_feat, 'wh bt c -> bt c wh')
         return vis_feat
 
-    def visual_fuse(self, local_img, embed, bbox, text_feat=None, kum_mode=None):
+    def visual_fuse(self, local_img, bbox=None, text_feat=None, kum_mode=None):
         b, t = local_img.size()[:2]
         local_img = rearrange(local_img, 'b t c h w -> (b t) c h w')
-        local_feat = self.clip.encode_image(local_img)[None,:,:]  # [1, bt,c]
+        local_feat = self.clip.visual(local_img, with_pooling=False) # [bt,c,7,7]
 
-        q_pos = self.pos_enc(gen_sineembed_for_position(bbox))
-        q_pos = rearrange(q_pos, 'b t c -> (b t) c')[None,:,:]
+        local_feat = rearrange(local_feat, 'bt c h w -> bt c (h w)')
+        local_feat = local_feat + self.pos_emb_local
+        local_feat = rearrange(local_feat, 'bt c hw -> hw bt c')
 
-        local_feat = local_feat + embed + q_pos
-
+        bbox = rearrange(bbox, 'b t c -> (b t) c')[..., :4]
+        pos_feat = self.pos_enc(bbox)[None, :, :]
+        
         if kum_mode is not None:
             fused_feat = self.cross_modal_fusion(
-                local_feat, text_feat, b, t
+                local_feat, text_feat, self.fusion_fc, self.fusion_visual_textual, self.fusion_ffn, self.fusion_drop, b, t
+            )
+            pos_feat = self.cross_modal_fusion(
+                pos_feat, text_feat, self.fusion_fc_2, self.fusion_pos_textual, self.fusion_ffn_2, self.fusion_drop_2, b, t
             )
         else:
-            fused_feat = rearrange(local_feat, 'l bt c -> bt c l') # l = 1
+            fused_feat = rearrange(local_feat, 'hw bt c -> bt c hw')
+            pos_feat = rearrange(pos_feat, '1 bt c -> bt c 1')
         
-        fused_feat = self.st_pooling(fused_feat, bs=b)
+        fused_feat = self.st_pooling(fused_feat, self.img_fc, bs=b)
+        pos_feat = self.st_pooling(pos_feat, self.img_fc_2, bs=b)
+
+        c_feat = torch.concat([fused_feat, pos_feat], dim=-1) # [b,2c]
+        c_feat = self.fuse(c_feat) # [b,c]
 
         if self.training:
-            return fused_feat
+            return c_feat # [b,c]
         else:
-            fused_feat = F.normalize(fused_feat, p=2, dim=-1)
-            return fused_feat
+            c_feat = F.normalize(c_feat, p=2, dim=-1)
+            return c_feat
 
     def textual_encoding(self, tokens):
         x_hidden, x = self.clip.encode_text_2(tokens, self.opt.truncation)
@@ -396,16 +389,16 @@ class Model(nn.Module):
     def get_text_fc(self, use_ln=True):
         if use_ln:
             return nn.Sequential(
-                nn.Linear(self.dim, self.dim),
+                nn.Linear(self.text_dim, self.text_dim),
                 nn.ReLU(),
-                nn.Linear(self.dim, self.opt.feature_dim),
+                nn.Linear(self.text_dim, self.opt.feature_dim),
                 nn.LayerNorm(self.opt.feature_dim, eps=1e-12),
             )
         else:
             return nn.Sequential(
-                nn.Linear(self.dim, self.dim),
+                nn.Linear(self.text_dim, self.text_dim),
                 nn.ReLU(),
-                nn.Linear(self.dim, self.opt.feature_dim),
+                nn.Linear(self.text_dim, self.opt.feature_dim),
             )
 
 if __name__ == '__main__':

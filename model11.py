@@ -10,7 +10,7 @@ from torchvision import transforms as T
 from CLIPReID.model import create_config, make_model
 from utils import *
 
-def get_model_8(opt, name='Model'):
+def get_model_11(opt, name='Model'):
     model = eval(name)(opt)
     model.to("cuda")
     model = nn.DataParallel(model)
@@ -28,30 +28,6 @@ def xcorr_depthwise(x, kernel):
     out = F.conv1d(x, kernel, groups=batch*channel)
     out = out.view(batch, channel, out.size(2))
     return out
-
-def gen_sineembed_for_position(pos_tensor, img_dim=1024):
-    # bs, n_query, _ = pos_tensor.size()
-    # sineembed_tensor = torch.zeros(n_query, bs, 2048)
-    scale = 2 * math.pi
-    dim_t = torch.arange(img_dim // 2, dtype=torch.float32, device=pos_tensor.device)
-    dim_t = 10000 ** (2 * (dim_t // 2) / (img_dim // 2))
-    x_embed = pos_tensor[:, :, 0] * scale
-    y_embed = pos_tensor[:, :, 1] * scale
-    pos_x = x_embed[:, :, None] / dim_t
-    pos_y = y_embed[:, :, None] / dim_t
-    pos_x = torch.stack((pos_x[:, :, 0::2].sin(), pos_x[:, :, 1::2].cos()), dim=3).flatten(2)
-    pos_y = torch.stack((pos_y[:, :, 0::2].sin(), pos_y[:, :, 1::2].cos()), dim=3).flatten(2)
-    
-    w_embed = pos_tensor[:, :, 2] * scale
-    pos_w = w_embed[:, :, None] / dim_t
-    pos_w = torch.stack((pos_w[:, :, 0::2].sin(), pos_w[:, :, 1::2].cos()), dim=3).flatten(2)
-
-    h_embed = pos_tensor[:, :, 3] * scale
-    pos_h = h_embed[:, :, None] / dim_t
-    pos_h = torch.stack((pos_h[:, :, 0::2].sin(), pos_h[:, :, 1::2].cos()), dim=3).flatten(2)
-
-    pos = torch.cat((pos_y, pos_x, pos_w, pos_h), dim=2)
-    return pos
 
 class MLP(nn.Module):
     """ Very simple multi-layer perceptron (also called FFN)"""
@@ -223,9 +199,7 @@ class Model(nn.Module):
 
         self.proj = MLP(self.reid_dim, self.dim, self.dim, num_layers=2)
 
-        self.pos_enc = nn.Sequential(
-            MLP(self.dim*2, self.dim, self.dim, num_layers=2),
-        )
+        self.combine = MLP(self.dim*2, self.dim, self.dim, num_layers=1)
 
         if self.opt.kum_mode == 'cascade attention':
             self.fusion_visual_textual = nn.MultiheadAttention(
@@ -310,10 +284,10 @@ class Model(nn.Module):
 
         if self.opt.kum_mode and (epoch >= self.opt.tg_epoch):
             fused_feat = self.visual_fuse(
-                x['local_img'], embed, x['bbox'], textual_hidden, self.opt.kum_mode
+                x['local_img'], embed, textual_hidden, self.opt.kum_mode
             )
         else:
-            fused_feat = self.visual_fuse(x['local_img'], embed, x['bbox'])
+            fused_feat = self.visual_fuse(x['local_img'], embed)
         logits = F.cosine_similarity(fused_feat, textual_feat)
         output['logits'] = logits
         output['vis_feat'] = fused_feat
@@ -351,15 +325,12 @@ class Model(nn.Module):
         vis_feat = rearrange(vis_feat, 'l bt c -> bt c l')
         return vis_feat
 
-    def visual_fuse(self, local_img, embed, bbox, text_feat=None, kum_mode=None):
+    def visual_fuse(self, local_img, embed, text_feat=None, kum_mode=None):
         b, t = local_img.size()[:2]
         local_img = rearrange(local_img, 'b t c h w -> (b t) c h w')
         local_feat = self.clip.encode_image(local_img)[None,:,:]  # [1, bt,c]
 
-        q_pos = self.pos_enc(gen_sineembed_for_position(bbox))
-        q_pos = rearrange(q_pos, 'b t c -> (b t) c')[None,:,:]
-
-        local_feat = local_feat + embed + q_pos
+        local_feat = self.combine(torch.cat((local_feat, embed), dim=2))
 
         if kum_mode is not None:
             fused_feat = self.cross_modal_fusion(

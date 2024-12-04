@@ -22,27 +22,22 @@ class opts:
         self.parser.add_argument('--num_workers', type=int, default=4)
 
         # model
-        self.parser.add_argument('--different_local', type=str, default='ResNet')
-        self.parser.add_argument('--fuse_mode', type=str, default='add')
-        self.parser.add_argument('--local_encoder', type=str, default='CLIP')
-        self.parser.add_argument('--global_encoder', type=str, default='CLIP')
         self.parser.add_argument('--model', type=int, default=1)
+        self.parser.add_argument('--num_layers', type=int, default=1)
         self.parser.add_argument('--clip_model', type=str, default='RN50')
         self.parser.add_argument('--feature_dim', type=int, default=1024)
         self.parser.add_argument('--truncation', type=int, default=10)
         self.parser.add_argument('--tg_epoch', type=int, default=0)
-        self.parser.add_argument('--num_layers', type=int, default=1)
-        self.parser.add_argument('--num_add', type=int, default=0)
         self.parser.add_argument('--kum_mode', type=str, default='cascade attention')
 
         # dataset
-        self.parser.add_argument('--sample_frame_len', type=int, default=8)
+        self.parser.add_argument('--sample_frame_len', type=int, default=4)
         self.parser.add_argument('--sample_frame_num', type=int, default=2)
         self.parser.add_argument('--sample_frame_stride', type=int, default=4)
         self.parser.add_argument('--sample_expression_num', type=int, default=1)
 
         # train
-        self.parser.add_argument('--train_bs', type=int, default=4)
+        self.parser.add_argument('--train_bs', type=int, default=16)
         self.parser.add_argument('--cosine_end_lr', type=float, default=0.)
         self.parser.add_argument('--weight_decay', type=float, default=1e-5)
         self.parser.add_argument('--warmup_epoch', type=int, default=0)
@@ -62,7 +57,7 @@ class opts:
         self.parser.add_argument('--resume_path', type=str, default='')
 
         # test
-        self.parser.add_argument('--test_bs', type=int, default=1)
+        self.parser.add_argument('--test_bs', type=int, default=16)
         self.parser.add_argument('--test_ckpt', type=str, default='iKUN.pth')
         self.parser.add_argument('--similarity_calibration', action='store_true', default=False)
 

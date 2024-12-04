@@ -1,11 +1,13 @@
 import math
+from opts import opt
 from os.path import join
 import torch
 from torch import nn
 import torch.nn.functional as F
 from clip.model import CLIP, convert_weights
 from einops import rearrange
-from dataloader import get_dataloader
+from torchvision import transforms as T
+from TransReID.model import load_config, make_model
 from utils import *
 
 def get_model_10(opt, name='Model'):
@@ -13,30 +15,6 @@ def get_model_10(opt, name='Model'):
     model.to("cuda")
     model = nn.DataParallel(model)
     return model
-
-def gen_sineembed_for_position(pos_tensor, img_dim=1024):
-    # bs, n_query, _ = pos_tensor.size()
-    # sineembed_tensor = torch.zeros(n_query, bs, 2048)
-    scale = 2 * math.pi
-    dim_t = torch.arange(img_dim // 2, dtype=torch.float32, device=pos_tensor.device)
-    dim_t = 10000 ** (2 * (dim_t // 2) / (img_dim // 2))
-    x_embed = pos_tensor[:, :, 0] * scale
-    y_embed = pos_tensor[:, :, 1] * scale
-    pos_x = x_embed[:, :, None] / dim_t
-    pos_y = y_embed[:, :, None] / dim_t
-    pos_x = torch.stack((pos_x[:, :, 0::2].sin(), pos_x[:, :, 1::2].cos()), dim=3).flatten(2)
-    pos_y = torch.stack((pos_y[:, :, 0::2].sin(), pos_y[:, :, 1::2].cos()), dim=3).flatten(2)
-    
-    w_embed = pos_tensor[:, :, 2] * scale
-    pos_w = w_embed[:, :, None] / dim_t
-    pos_w = torch.stack((pos_w[:, :, 0::2].sin(), pos_w[:, :, 1::2].cos()), dim=3).flatten(2)
-
-    h_embed = pos_tensor[:, :, 3] * scale
-    pos_h = h_embed[:, :, None] / dim_t
-    pos_h = torch.stack((pos_h[:, :, 0::2].sin(), pos_h[:, :, 1::2].cos()), dim=3).flatten(2)
-
-    pos = torch.cat((pos_y, pos_x, pos_w, pos_h), dim=2)
-    return pos
 
 def xcorr_depthwise(x, kernel):
     """
@@ -197,25 +175,39 @@ class Model(nn.Module):
         )
         self.clip = self.clip.float()
         self.dim = 1024
+        self.reid_dim=3840
         self.img_fc = self.get_img_fc(use_ln=False)
         self.text_fc = self.get_text_fc(use_ln=False)
         self._freeze_text_encoder()
 
-        self.mlp = MLP(self.dim*2, self.dim, self.dim, 2)
-        self.proj = nn.Linear(self.dim, self.dim)
+        cfg1 = load_config("./TransReID/Market/vit_transreid_stride.yml")
+        self.model1 = make_model(cfg1, num_class=751, camera_num=6, view_num=0)
+        self.model1.load_param("./TransReID/Market/vit_transreid_market.pth")
+        self.model1.eval()
+        self.model1.cuda()
+        self.transform_person = T.Resize((256, 128)).cuda()
+        for param in self.model1.parameters():
+            param.requires_grad = False
 
-        self.attn = nn.ModuleList([nn.MultiheadAttention(
-                embed_dim=self.dim,
-                num_heads=4,
-                dropout=0,
-            ) for _ in range(opt.num_add)])
+        cfg2 = load_config("./TransReID/VehicleID/vit_transreid_stride.yml")
+        self.model2 = make_model(cfg2, num_class=13164, camera_num=0, view_num=2)
+        self.model2.load_param("./TransReID/VehicleID/vit_transreid_vehicleID.pth")
+        self.model2.eval()
+        self.model2.cuda()
+        self.transform_car = T.Resize((256, 256)).cuda()
+        for param in self.model2.parameters():
+            param.requires_grad = False
+
+        self.proj = MLP(self.reid_dim, self.dim, self.dim, num_layers=2)
+
+        self.combine = MLP(self.dim*2, self.dim, self.dim, num_layers=1)
 
         if self.opt.kum_mode == 'cascade attention':
-            self.fusion_visual_textual = nn.ModuleList([nn.MultiheadAttention(
+            self.fusion_visual_textual = nn.MultiheadAttention(
                 embed_dim=self.dim,
                 num_heads=4,
                 dropout=0,
-            ) for _ in range(opt.num_layers)])
+            )
             
             self.fusion_fc = nn.Linear(self.dim, self.dim)
             self.fusion_ffn = FFN(self.dim, 0.1)
@@ -270,12 +262,33 @@ class Model(nn.Module):
         output = dict()
         textual_hidden, textual_feat = self.textual_encoding(x['exp'])
         
+        person_indices = (x['bbox'][:, :, 4] == 1).nonzero(as_tuple=False)
+        car_indices = (x['bbox'][:, :, 4] == 0).nonzero(as_tuple=False)
+
+        embed = torch.empty((x['local_img'].shape[0], x['local_img'].shape[1], self.reid_dim), device=x['local_img'].device)
+
+        if len(person_indices) > 0:
+            person_input = self.transform_person(x['local_img'][person_indices[:,0], person_indices[:, 1]]).to(torch.float32)
+            with torch.no_grad():
+                person_embed = self.model1(person_input, cam_label=0)
+            embed[person_indices[:,0], person_indices[:, 1]] = person_embed
+
+        if len(car_indices) > 0:
+            car_input = self.transform_car(x['local_img'][car_indices[:,0], car_indices[:, 1]]).to(torch.float32)
+            with torch.no_grad():
+                car_embed = self.model2(car_input, view_label=0)
+            embed[car_indices[:,0], car_indices[:, 1]] = car_embed
+
+        embed = rearrange(embed, 'b t c -> (b t) c')
+        embed = self.proj(embed[None,:,:])
+
+
         if self.opt.kum_mode and (epoch >= self.opt.tg_epoch):
             fused_feat = self.visual_fuse(
-                x['local_img'], x['global_img'], x['bbox'], textual_hidden, self.opt.kum_mode
+                x['local_img'], embed, textual_hidden, self.opt.kum_mode
             )
         else:
-            fused_feat = self.visual_fuse(x['local_img'], x['global_img'], x['bbox'])
+            fused_feat = self.visual_fuse(x['local_img'], embed)
         logits = F.cosine_similarity(fused_feat, textual_feat)
         output['logits'] = logits
         output['vis_feat'] = fused_feat
@@ -286,6 +299,8 @@ class Model(nn.Module):
         # spatial pooling
         feat = F.adaptive_avg_pool1d(feat, 1).squeeze()  # [bt,c,l]->[bt,c]
         # temporal pooling
+        if len(feat.shape) ==1:
+            feat = feat[None,:]
         feat = rearrange(feat, '(b t) c -> b c t', b=bs)
         feat = F.adaptive_avg_pool1d(feat, 1).squeeze()  # [b,c]
         # projection
@@ -301,44 +316,29 @@ class Model(nn.Module):
         text_feat = self.fusion_fc(text_feat)
         text_feat = rearrange(text_feat, 'bt l c -> l bt c')
         # fusion
-        fused_feat = vis_feat
-        for layer in self.fusion_visual_textual:
-            fused_feat = layer(
-                query=fused_feat,
-                key=text_feat,
-                value=text_feat,
-            )[0]
+        fused_feat = vis_feat.clone()
+        fused_feat = self.fusion_visual_textual(
+            query=fused_feat,
+            key=text_feat,
+            value=text_feat,
+        )[0]
         vis_feat = vis_feat * fused_feat
         vis_feat = rearrange(vis_feat, 'l bt c -> bt c l')
         return vis_feat
 
-    def visual_fuse(self, local_img, full_images, bbox, text_feat=None, kum_mode=None):
-        b, t = full_images.size()[:2]
-        # spatial encoding
+    def visual_fuse(self, local_img, embed, text_feat=None, kum_mode=None):
+        b, t = local_img.size()[:2]
         local_img = rearrange(local_img, 'b t c h w -> (b t) c h w')
-        local_feat = self.clip.encode_image(local_img)[None,:,:]  # [bt,c]
+        local_feat = self.clip.encode_image(local_img)[None,:,:]  # [1, bt,c]
 
-        # positional encoding
-        e_pos = gen_sineembed_for_position(bbox, img_dim=self.dim)
-        query_pos = self.mlp(e_pos)
-        q_pos = self.proj(query_pos)
-        q_pos = rearrange(q_pos, 'b t c -> (b t) c')[None,:,:]
-
-        local_feat = local_feat + q_pos
-
-        for layer in self.attn:
-            local_feat = layer(
-                key=local_feat,
-                query=local_feat,
-                value=local_feat
-            )[0]
+        local_feat = self.combine(torch.cat((local_feat, embed), dim=2))
 
         if kum_mode is not None:
             fused_feat = self.cross_modal_fusion(
                 local_feat, text_feat, b, t
             )
         else:
-            fused_feat = rearrange(local_feat, 'HW bt c -> bt c HW')
+            fused_feat = rearrange(local_feat, 'l bt c -> bt c l') # l = 1
         
         fused_feat = self.st_pooling(fused_feat, bs=b)
 
@@ -347,7 +347,6 @@ class Model(nn.Module):
         else:
             fused_feat = F.normalize(fused_feat, p=2, dim=-1)
             return fused_feat
-        
 
     def textual_encoding(self, tokens):
         x_hidden, x = self.clip.encode_text_2(tokens, self.opt.truncation)
@@ -382,21 +381,4 @@ class Model(nn.Module):
             )
 
 if __name__ == '__main__':
-    from opts import opt
-    model = Model(opt)
-    model.cuda()
-    dataloader_train = get_dataloader('train', opt, 'RMOT_Dataset', show=True)
-    for batch_idx, data in enumerate(dataloader_train):
-        # load
-        expression = data['target_expressions']
-        expression_ids = data['expression_id'].cuda()
-        # forward
-        inputs = dict(
-            local_img=data['cropped_images'].cuda(),
-            global_img=data['global_images'].cuda(),
-            bbox = data['bbox'].cuda(),
-            exp=tokenize(expression).cuda(),
-        )
-        logits = model(inputs, 1)['logits']
-        print(logits.shape)
-        break
+    pass
