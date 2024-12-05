@@ -1,0 +1,189 @@
+2024-12-05 14:24:24,391 INFO    StreamThr :2947730 [internal.py:wandb_internal():85] W&B internal server running at pid: 2947730, started at: 2024-12-05 14:24:24.389218
+2024-12-05 14:24:24,396 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: status
+2024-12-05 14:24:24,397 INFO    WriterThread:2947730 [datastore.py:open_for_write():87] open: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/run-9gavv9rx.wandb
+2024-12-05 14:24:24,397 DEBUG   SenderThread:2947730 [sender.py:send():379] send: header
+2024-12-05 14:24:24,452 DEBUG   SenderThread:2947730 [sender.py:send():379] send: run
+2024-12-05 14:24:24,998 INFO    SenderThread:2947730 [dir_watcher.py:__init__():211] watching files in: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files
+2024-12-05 14:24:24,999 INFO    SenderThread:2947730 [sender.py:_start_run_threads():1188] run started: 9gavv9rx with start time 1733383464.390309
+2024-12-05 14:24:25,011 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: check_version
+2024-12-05 14:24:25,011 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: check_version
+2024-12-05 14:24:25,131 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: run_start
+2024-12-05 14:24:25,145 DEBUG   HandlerThread:2947730 [system_info.py:__init__():26] System info init
+2024-12-05 14:24:25,145 DEBUG   HandlerThread:2947730 [system_info.py:__init__():41] System info init done
+2024-12-05 14:24:25,145 INFO    HandlerThread:2947730 [system_monitor.py:start():194] Starting system monitor
+2024-12-05 14:24:25,146 INFO    SystemMonitor:2947730 [system_monitor.py:_start():158] Starting system asset monitoring threads
+2024-12-05 14:24:25,146 INFO    HandlerThread:2947730 [system_monitor.py:probe():214] Collecting system info
+2024-12-05 14:24:25,147 INFO    SystemMonitor:2947730 [interfaces.py:start():188] Started cpu monitoring
+2024-12-05 14:24:25,148 INFO    SystemMonitor:2947730 [interfaces.py:start():188] Started disk monitoring
+2024-12-05 14:24:25,148 INFO    SystemMonitor:2947730 [interfaces.py:start():188] Started gpu monitoring
+2024-12-05 14:24:25,149 INFO    SystemMonitor:2947730 [interfaces.py:start():188] Started memory monitoring
+2024-12-05 14:24:25,149 INFO    SystemMonitor:2947730 [interfaces.py:start():188] Started network monitoring
+2024-12-05 14:24:25,159 DEBUG   HandlerThread:2947730 [system_info.py:probe():152] Probing system
+2024-12-05 14:24:25,163 DEBUG   HandlerThread:2947730 [system_info.py:_probe_git():137] Probing git
+2024-12-05 14:24:25,172 DEBUG   HandlerThread:2947730 [system_info.py:_probe_git():145] Probing git done
+2024-12-05 14:24:25,172 DEBUG   HandlerThread:2947730 [system_info.py:probe():200] Probing system done
+2024-12-05 14:24:25,172 DEBUG   HandlerThread:2947730 [system_monitor.py:probe():223] {'os': 'Linux-5.4.0-200-generic-x86_64-with-glibc2.31', 'python': '3.9.19', 'heartbeatAt': '2024-12-05T07:24:25.159666', 'startedAt': '2024-12-05T07:24:24.382246', 'docker': None, 'cuda': None, 'args': ('--model', '26', '--gpus', '0', '--sample_frame_len', '2', '--sample_frame_num', '2', '--sample_frame_stride', '2', '--num_layers', '1', '--train_bs', '16', '--exp_name', 'my_exp59'), 'state': 'running', 'program': '/mnt/banana/student/khanh/iKUN-v2/train.py', 'codePathLocal': 'train.py', 'codePath': 'train.py', 'git': {'remote': 'https://github.com/khanhbuan/iKUN-v2', 'commit': 'd27236794c50603d559680c6a3b0ee2689e896d2'}, 'email': None, 'root': '/mnt/banana/student/khanh/iKUN-v2', 'host': 'vision', 'username': 'student', 'executable': '/mnt/banana/student/khanh/nnk/bin/python', 'cpu_count': 4, 'cpu_count_logical': 4, 'cpu_freq': {'current': 3367.2442499999997, 'min': 800.0, 'max': 3500.0}, 'cpu_freq_per_core': [{'current': 3395.082, 'min': 800.0, 'max': 3500.0}, {'current': 3381.19, 'min': 800.0, 'max': 3500.0}, {'current': 3357.526, 'min': 800.0, 'max': 3500.0}, {'current': 3335.179, 'min': 800.0, 'max': 3500.0}], 'disk': {'/': {'total': 218.50913619995117, 'used': 203.63365173339844}}, 'gpu': 'NVIDIA GeForce GTX 1080 Ti', 'gpu_count': 1, 'gpu_devices': [{'name': 'NVIDIA GeForce GTX 1080 Ti', 'memory_total': 11811160064}], 'memory': {'total': 15.511474609375}}
+2024-12-05 14:24:25,172 INFO    HandlerThread:2947730 [system_monitor.py:probe():224] Finished collecting system info
+2024-12-05 14:24:25,172 INFO    HandlerThread:2947730 [system_monitor.py:probe():227] Publishing system info
+2024-12-05 14:24:25,172 DEBUG   HandlerThread:2947730 [system_info.py:_save_conda():209] Saving list of conda packages installed into the current environment
+2024-12-05 14:24:26,000 INFO    Thread-12 :2947730 [dir_watcher.py:_on_file_created():271] file/dir created: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/conda-environment.yaml
+2024-12-05 14:24:28,297 DEBUG   HandlerThread:2947730 [system_info.py:_save_conda():224] Saving conda packages done
+2024-12-05 14:24:28,298 INFO    HandlerThread:2947730 [system_monitor.py:probe():229] Finished publishing system info
+2024-12-05 14:24:28,302 DEBUG   SenderThread:2947730 [sender.py:send():379] send: files
+2024-12-05 14:24:28,303 INFO    SenderThread:2947730 [sender.py:_save_file():1454] saving file wandb-metadata.json with policy now
+2024-12-05 14:24:28,432 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: python_packages
+2024-12-05 14:24:28,433 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: python_packages
+2024-12-05 14:24:28,433 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: stop_status
+2024-12-05 14:24:28,433 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: stop_status
+2024-12-05 14:24:28,435 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: internal_messages
+2024-12-05 14:24:28,756 DEBUG   SenderThread:2947730 [sender.py:send():379] send: telemetry
+2024-12-05 14:24:28,998 INFO    Thread-12 :2947730 [dir_watcher.py:_on_file_modified():288] file/dir modified: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/conda-environment.yaml
+2024-12-05 14:24:28,999 INFO    Thread-12 :2947730 [dir_watcher.py:_on_file_created():271] file/dir created: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/wandb-metadata.json
+2024-12-05 14:24:28,999 INFO    Thread-12 :2947730 [dir_watcher.py:_on_file_created():271] file/dir created: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/requirements.txt
+2024-12-05 14:24:29,123 INFO    wandb-upload_0:2947730 [upload_job.py:push():130] Uploaded file /tmp/tmp2n9xjxexwandb/o7poczi7-wandb-metadata.json
+2024-12-05 14:24:29,433 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: internal_messages
+2024-12-05 14:24:29,617 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: status_report
+2024-12-05 14:24:29,618 DEBUG   SenderThread:2947730 [sender.py:send():379] send: exit
+2024-12-05 14:24:29,618 INFO    SenderThread:2947730 [sender.py:send_exit():586] handling exit code: 1
+2024-12-05 14:24:29,618 INFO    SenderThread:2947730 [sender.py:send_exit():588] handling runtime: 4
+2024-12-05 14:24:29,619 INFO    SenderThread:2947730 [sender.py:_save_file():1454] saving file wandb-summary.json with policy end
+2024-12-05 14:24:29,619 INFO    SenderThread:2947730 [sender.py:send_exit():594] send defer
+2024-12-05 14:24:29,619 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: defer
+2024-12-05 14:24:29,619 INFO    HandlerThread:2947730 [handler.py:handle_request_defer():184] handle defer: 0
+2024-12-05 14:24:29,619 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: defer
+2024-12-05 14:24:29,620 INFO    SenderThread:2947730 [sender.py:send_request_defer():610] handle sender defer: 0
+2024-12-05 14:24:29,620 INFO    SenderThread:2947730 [sender.py:transition_state():614] send defer: 1
+2024-12-05 14:24:29,620 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: defer
+2024-12-05 14:24:29,620 INFO    HandlerThread:2947730 [handler.py:handle_request_defer():184] handle defer: 1
+2024-12-05 14:24:29,620 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: defer
+2024-12-05 14:24:29,620 INFO    SenderThread:2947730 [sender.py:send_request_defer():610] handle sender defer: 1
+2024-12-05 14:24:29,620 INFO    SenderThread:2947730 [sender.py:transition_state():614] send defer: 2
+2024-12-05 14:24:29,620 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: defer
+2024-12-05 14:24:29,620 INFO    HandlerThread:2947730 [handler.py:handle_request_defer():184] handle defer: 2
+2024-12-05 14:24:29,620 INFO    HandlerThread:2947730 [system_monitor.py:finish():203] Stopping system monitor
+2024-12-05 14:24:29,620 DEBUG   SystemMonitor:2947730 [system_monitor.py:_start():172] Starting system metrics aggregation loop
+2024-12-05 14:24:29,620 DEBUG   SystemMonitor:2947730 [system_monitor.py:_start():179] Finished system metrics aggregation loop
+2024-12-05 14:24:29,621 DEBUG   SystemMonitor:2947730 [system_monitor.py:_start():183] Publishing last batch of metrics
+2024-12-05 14:24:29,621 INFO    HandlerThread:2947730 [interfaces.py:finish():200] Joined cpu monitor
+2024-12-05 14:24:29,621 INFO    HandlerThread:2947730 [interfaces.py:finish():200] Joined disk monitor
+2024-12-05 14:24:29,674 INFO    HandlerThread:2947730 [interfaces.py:finish():200] Joined gpu monitor
+2024-12-05 14:24:29,674 INFO    HandlerThread:2947730 [interfaces.py:finish():200] Joined memory monitor
+2024-12-05 14:24:29,674 INFO    HandlerThread:2947730 [interfaces.py:finish():200] Joined network monitor
+2024-12-05 14:24:29,674 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: defer
+2024-12-05 14:24:29,675 INFO    SenderThread:2947730 [sender.py:send_request_defer():610] handle sender defer: 2
+2024-12-05 14:24:29,675 INFO    SenderThread:2947730 [sender.py:transition_state():614] send defer: 3
+2024-12-05 14:24:29,675 DEBUG   SenderThread:2947730 [sender.py:send():379] send: stats
+2024-12-05 14:24:29,675 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: defer
+2024-12-05 14:24:29,675 INFO    HandlerThread:2947730 [handler.py:handle_request_defer():184] handle defer: 3
+2024-12-05 14:24:29,675 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: defer
+2024-12-05 14:24:29,675 INFO    SenderThread:2947730 [sender.py:send_request_defer():610] handle sender defer: 3
+2024-12-05 14:24:29,675 INFO    SenderThread:2947730 [sender.py:transition_state():614] send defer: 4
+2024-12-05 14:24:29,675 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: defer
+2024-12-05 14:24:29,675 INFO    HandlerThread:2947730 [handler.py:handle_request_defer():184] handle defer: 4
+2024-12-05 14:24:29,676 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: defer
+2024-12-05 14:24:29,676 INFO    SenderThread:2947730 [sender.py:send_request_defer():610] handle sender defer: 4
+2024-12-05 14:24:29,676 INFO    SenderThread:2947730 [sender.py:transition_state():614] send defer: 5
+2024-12-05 14:24:29,676 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: defer
+2024-12-05 14:24:29,676 INFO    HandlerThread:2947730 [handler.py:handle_request_defer():184] handle defer: 5
+2024-12-05 14:24:29,676 DEBUG   SenderThread:2947730 [sender.py:send():379] send: summary
+2024-12-05 14:24:29,676 INFO    SenderThread:2947730 [sender.py:_save_file():1454] saving file wandb-summary.json with policy end
+2024-12-05 14:24:29,676 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: defer
+2024-12-05 14:24:29,676 INFO    SenderThread:2947730 [sender.py:send_request_defer():610] handle sender defer: 5
+2024-12-05 14:24:29,676 INFO    SenderThread:2947730 [sender.py:transition_state():614] send defer: 6
+2024-12-05 14:24:29,677 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: defer
+2024-12-05 14:24:29,677 INFO    HandlerThread:2947730 [handler.py:handle_request_defer():184] handle defer: 6
+2024-12-05 14:24:29,677 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: defer
+2024-12-05 14:24:29,677 INFO    SenderThread:2947730 [sender.py:send_request_defer():610] handle sender defer: 6
+2024-12-05 14:24:29,680 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: status_report
+2024-12-05 14:24:29,999 INFO    Thread-12 :2947730 [dir_watcher.py:_on_file_created():271] file/dir created: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/wandb-summary.json
+2024-12-05 14:24:29,999 INFO    Thread-12 :2947730 [dir_watcher.py:_on_file_created():271] file/dir created: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/output.log
+2024-12-05 14:24:30,131 INFO    SenderThread:2947730 [sender.py:transition_state():614] send defer: 7
+2024-12-05 14:24:30,131 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: defer
+2024-12-05 14:24:30,131 INFO    HandlerThread:2947730 [handler.py:handle_request_defer():184] handle defer: 7
+2024-12-05 14:24:30,132 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: defer
+2024-12-05 14:24:30,132 INFO    SenderThread:2947730 [sender.py:send_request_defer():610] handle sender defer: 7
+2024-12-05 14:24:30,617 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: poll_exit
+2024-12-05 14:24:31,000 INFO    Thread-12 :2947730 [dir_watcher.py:_on_file_modified():288] file/dir modified: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/config.yaml
+2024-12-05 14:24:31,629 INFO    SenderThread:2947730 [sender.py:transition_state():614] send defer: 8
+2024-12-05 14:24:31,629 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: poll_exit
+2024-12-05 14:24:31,633 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: defer
+2024-12-05 14:24:31,633 INFO    HandlerThread:2947730 [handler.py:handle_request_defer():184] handle defer: 8
+2024-12-05 14:24:31,634 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: defer
+2024-12-05 14:24:31,634 INFO    SenderThread:2947730 [sender.py:send_request_defer():610] handle sender defer: 8
+2024-12-05 14:24:31,635 INFO    SenderThread:2947730 [job_builder.py:build():440] Attempting to build job artifact
+2024-12-05 14:24:31,636 INFO    SenderThread:2947730 [job_builder.py:_get_source_type():569] is repo sourced job
+2024-12-05 14:24:31,688 INFO    SenderThread:2947730 [job_builder.py:build():545] adding wandb-job metadata file
+2024-12-05 14:24:31,694 INFO    SenderThread:2947730 [sender.py:transition_state():614] send defer: 9
+2024-12-05 14:24:31,694 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: defer
+2024-12-05 14:24:31,694 INFO    HandlerThread:2947730 [handler.py:handle_request_defer():184] handle defer: 9
+2024-12-05 14:24:31,695 DEBUG   SenderThread:2947730 [sender.py:send():379] send: artifact
+2024-12-05 14:24:32,000 INFO    Thread-12 :2947730 [dir_watcher.py:_on_file_modified():288] file/dir modified: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/output.log
+2024-12-05 14:24:32,618 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: poll_exit
+2024-12-05 14:24:32,905 INFO    SenderThread:2947730 [sender.py:send_artifact():1537] sent artifact job-https___github.com_khanhbuan_iKUN-v2_train.py - {'id': 'QXJ0aWZhY3Q6MTM1OTkyNTU1Mg==', 'state': 'COMMITTED', 'artifactSequence': {'id': 'QXJ0aWZhY3RDb2xsZWN0aW9uOjUwMDU5Nzg4Nw==', 'latestArtifact': {'id': 'QXJ0aWZhY3Q6MTM1OTkyNTU1Mg==', 'versionIndex': 2}}}
+2024-12-05 14:24:32,905 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: defer
+2024-12-05 14:24:32,905 INFO    SenderThread:2947730 [sender.py:send_request_defer():610] handle sender defer: 9
+2024-12-05 14:24:32,905 INFO    SenderThread:2947730 [dir_watcher.py:finish():358] shutting down directory watcher
+2024-12-05 14:24:33,002 INFO    SenderThread:2947730 [dir_watcher.py:finish():388] scan: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files
+2024-12-05 14:24:33,003 INFO    SenderThread:2947730 [dir_watcher.py:finish():402] scan save: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/requirements.txt requirements.txt
+2024-12-05 14:24:33,003 INFO    SenderThread:2947730 [dir_watcher.py:finish():402] scan save: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/output.log output.log
+2024-12-05 14:24:33,011 INFO    SenderThread:2947730 [dir_watcher.py:finish():402] scan save: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/conda-environment.yaml conda-environment.yaml
+2024-12-05 14:24:33,018 INFO    SenderThread:2947730 [dir_watcher.py:finish():402] scan save: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/wandb-metadata.json wandb-metadata.json
+2024-12-05 14:24:33,019 INFO    SenderThread:2947730 [dir_watcher.py:finish():402] scan save: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/config.yaml config.yaml
+2024-12-05 14:24:33,027 INFO    SenderThread:2947730 [dir_watcher.py:finish():402] scan save: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/wandb-summary.json wandb-summary.json
+2024-12-05 14:24:33,028 INFO    SenderThread:2947730 [sender.py:transition_state():614] send defer: 10
+2024-12-05 14:24:33,029 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: poll_exit
+2024-12-05 14:24:33,030 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: defer
+2024-12-05 14:24:33,030 INFO    HandlerThread:2947730 [handler.py:handle_request_defer():184] handle defer: 10
+2024-12-05 14:24:33,044 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: defer
+2024-12-05 14:24:33,044 INFO    SenderThread:2947730 [sender.py:send_request_defer():610] handle sender defer: 10
+2024-12-05 14:24:33,044 INFO    SenderThread:2947730 [file_pusher.py:finish():169] shutting down file pusher
+2024-12-05 14:24:33,525 INFO    wandb-upload_0:2947730 [upload_job.py:push():130] Uploaded file /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/requirements.txt
+2024-12-05 14:24:33,606 INFO    wandb-upload_1:2947730 [upload_job.py:push():130] Uploaded file /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/output.log
+2024-12-05 14:24:33,619 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: poll_exit
+2024-12-05 14:24:33,620 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: poll_exit
+2024-12-05 14:24:33,690 INFO    wandb-upload_4:2947730 [upload_job.py:push():130] Uploaded file /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/wandb-summary.json
+2024-12-05 14:24:33,693 INFO    wandb-upload_3:2947730 [upload_job.py:push():130] Uploaded file /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/config.yaml
+2024-12-05 14:24:33,741 INFO    wandb-upload_2:2947730 [upload_job.py:push():130] Uploaded file /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/files/conda-environment.yaml
+2024-12-05 14:24:33,941 INFO    Thread-11 :2947730 [sender.py:transition_state():614] send defer: 11
+2024-12-05 14:24:33,942 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: defer
+2024-12-05 14:24:33,942 INFO    HandlerThread:2947730 [handler.py:handle_request_defer():184] handle defer: 11
+2024-12-05 14:24:33,943 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: defer
+2024-12-05 14:24:33,943 INFO    SenderThread:2947730 [sender.py:send_request_defer():610] handle sender defer: 11
+2024-12-05 14:24:33,944 INFO    SenderThread:2947730 [file_pusher.py:join():175] waiting for file pusher
+2024-12-05 14:24:33,944 INFO    SenderThread:2947730 [sender.py:transition_state():614] send defer: 12
+2024-12-05 14:24:33,945 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: defer
+2024-12-05 14:24:33,945 INFO    HandlerThread:2947730 [handler.py:handle_request_defer():184] handle defer: 12
+2024-12-05 14:24:33,946 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: defer
+2024-12-05 14:24:33,946 INFO    SenderThread:2947730 [sender.py:send_request_defer():610] handle sender defer: 12
+2024-12-05 14:24:33,946 INFO    SenderThread:2947730 [file_stream.py:finish():601] file stream finish called
+2024-12-05 14:24:34,386 INFO    SenderThread:2947730 [file_stream.py:finish():605] file stream finish is done
+2024-12-05 14:24:34,387 INFO    SenderThread:2947730 [sender.py:transition_state():614] send defer: 13
+2024-12-05 14:24:34,387 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: defer
+2024-12-05 14:24:34,387 INFO    HandlerThread:2947730 [handler.py:handle_request_defer():184] handle defer: 13
+2024-12-05 14:24:34,388 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: defer
+2024-12-05 14:24:34,388 INFO    SenderThread:2947730 [sender.py:send_request_defer():610] handle sender defer: 13
+2024-12-05 14:24:34,388 INFO    SenderThread:2947730 [sender.py:transition_state():614] send defer: 14
+2024-12-05 14:24:34,389 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: defer
+2024-12-05 14:24:34,389 INFO    HandlerThread:2947730 [handler.py:handle_request_defer():184] handle defer: 14
+2024-12-05 14:24:34,390 DEBUG   SenderThread:2947730 [sender.py:send():379] send: final
+2024-12-05 14:24:34,391 DEBUG   SenderThread:2947730 [sender.py:send():379] send: footer
+2024-12-05 14:24:34,391 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: defer
+2024-12-05 14:24:34,391 INFO    SenderThread:2947730 [sender.py:send_request_defer():610] handle sender defer: 14
+2024-12-05 14:24:34,392 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: poll_exit
+2024-12-05 14:24:34,393 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: poll_exit
+2024-12-05 14:24:34,394 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: server_info
+2024-12-05 14:24:34,395 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: server_info
+2024-12-05 14:24:34,402 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: poll_exit
+2024-12-05 14:24:34,403 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: get_summary
+2024-12-05 14:24:34,405 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: sampled_history
+2024-12-05 14:24:34,405 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: internal_messages
+2024-12-05 14:24:34,634 DEBUG   SenderThread:2947730 [sender.py:send_request():406] send_request: poll_exit
+2024-12-05 14:24:34,634 INFO    MainThread:2947730 [wandb_run.py:_footer_history_summary_info():4016] rendering history
+2024-12-05 14:24:34,635 INFO    MainThread:2947730 [wandb_run.py:_footer_history_summary_info():4048] rendering summary
+2024-12-05 14:24:34,635 INFO    MainThread:2947730 [wandb_run.py:_footer_sync_info():3975] logging synced files
+2024-12-05 14:24:34,635 DEBUG   HandlerThread:2947730 [handler.py:handle_request():158] handle_request: shutdown
+2024-12-05 14:24:34,635 INFO    HandlerThread:2947730 [handler.py:finish():882] shutting down handler
+2024-12-05 14:24:35,403 INFO    WriterThread:2947730 [datastore.py:close():296] close: /mnt/banana/student/khanh/iKUN-v2/wandb/run-20241205_142424-9gavv9rx/run-9gavv9rx.wandb
+2024-12-05 14:24:35,634 INFO    SenderThread:2947730 [sender.py:finish():1615] shutting down sender
+2024-12-05 14:24:35,635 INFO    SenderThread:2947730 [file_pusher.py:finish():169] shutting down file pusher
+2024-12-05 14:24:35,635 INFO    SenderThread:2947730 [file_pusher.py:join():175] waiting for file pusher

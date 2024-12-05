@@ -1,0 +1,34 @@
+MODEL:
+  PRETRAIN_CHOICE: 'imagenet'
+  PRETRAIN_PATH: './TransReID/vit_base.pth'
+  METRIC_LOSS_TYPE: 'triplet'
+  IF_LABELSMOOTH: 'off'
+  IF_WITH_CENTER: 'no'
+  NAME: 'transformer'
+  NO_MARGIN: True
+#  DEVICE_ID: ('0')
+  TRANSFORMER_TYPE: 'vit_base_patch16_224_TransReID'
+  STRIDE_SIZE: [12, 12]
+#  DIST_TRAIN: True
+  JPM: True
+  SIE_COE: 3.0
+  SIE_CAMERA: False
+  SIE_VIEW: False
+  SHIFT_NUM: 8
+  SHUFFLE_GROUP: 2
+  DEVIDE_LENGTH: 4
+  RE_ARRANGE: True
+
+INPUT:
+  SIZE_TRAIN: [256, 256]
+  SIZE_TEST: [256, 256]
+  PROB: 0.5 # random horizontal flip
+  RE_PROB: 0.5 # random erasing
+  PADDING: 10
+  PIXEL_MEAN: [0.5, 0.5, 0.5]
+  PIXEL_STD: [0.5, 0.5, 0.5]
+
+TEST:
+  NECK_FEAT: 'before'
+  FEAT_NORM: 'yes'
+

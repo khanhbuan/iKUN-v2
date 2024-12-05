@@ -1,0 +1,13 @@
+python run_mot_challenge.py \
+--METRICS HOTA \
+--SEQMAP_FILE /data/hpc/khanh/iKUN/plugins/seqmap.txt \
+--SKIP_SPLIT_FOL True \
+--GT_FOLDER /data/hpc/khanh/iKUN/plugins/Refer-KITTI/KITTI/training/image_02 \
+--OUTPUT_FOLDER ./plugins/my_exp29/results \
+--TRACKERS_FOLDER /data/hpc/khanh/iKUN/plugins/my_exp29/results \
+--GT_LOC_FORMAT {gt_folder}{video_id}/{expression_id}/gt.txt \
+--TRACKERS_TO_EVAL '/data/hpc/khanh/iKUN/plugins/my_exp29/results' \
+--USE_PARALLEL True \
+--NUM_PARALLEL_CORES 2 \
+--SKIP_SPLIT_FOL True \
+--PLOT_CURVES False

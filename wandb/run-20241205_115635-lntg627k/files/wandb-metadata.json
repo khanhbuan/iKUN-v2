@@ -1,0 +1,85 @@
+{
+    "os": "Linux-5.4.0-200-generic-x86_64-with-glibc2.31",
+    "python": "3.9.19",
+    "heartbeatAt": "2024-12-05T04:56:35.905191",
+    "startedAt": "2024-12-05T04:56:35.113016",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "--model",
+        "26",
+        "--gpus",
+        "0",
+        "--sample_frame_len",
+        "2",
+        "--sample_frame_num",
+        "2",
+        "--sample_frame_stride",
+        "2",
+        "--num_layers",
+        "1",
+        "--train_bs",
+        "16",
+        "--exp_name",
+        "my_exp59"
+    ],
+    "state": "running",
+    "program": "/mnt/banana/student/khanh/iKUN-v2/train.py",
+    "codePathLocal": "train.py",
+    "codePath": "train.py",
+    "git": {
+        "remote": "https://github.com/khanhbuan/iKUN-v2",
+        "commit": "d27236794c50603d559680c6a3b0ee2689e896d2"
+    },
+    "email": null,
+    "root": "/mnt/banana/student/khanh/iKUN-v2",
+    "host": "vision",
+    "username": "student",
+    "executable": "/mnt/banana/student/khanh/nnk/bin/python",
+    "cpu_count": 4,
+    "cpu_count_logical": 4,
+    "cpu_freq": {
+        "current": 3365.0065,
+        "min": 800.0,
+        "max": 3500.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3355.11,
+            "min": 800.0,
+            "max": 3500.0
+        },
+        {
+            "current": 3394.227,
+            "min": 800.0,
+            "max": 3500.0
+        },
+        {
+            "current": 3386.26,
+            "min": 800.0,
+            "max": 3500.0
+        },
+        {
+            "current": 3324.429,
+            "min": 800.0,
+            "max": 3500.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 218.50913619995117,
+            "used": 203.62817001342773
+        }
+    },
+    "gpu": "NVIDIA GeForce GTX 1080 Ti",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce GTX 1080 Ti",
+            "memory_total": 11811160064
+        }
+    ],
+    "memory": {
+        "total": 15.511474609375
+    }
+}

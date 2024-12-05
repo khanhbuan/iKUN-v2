@@ -1,0 +1,29 @@
+
+torch.Size([16, 9])
+Traceback (most recent call last):
+  File "/mnt/banana/student/khanh/nnk/lib/python3.9/site-packages/einops/einops.py", line 522, in reduce
+    recipe = _prepare_transformation_recipe(pattern, reduction, axes_names=tuple(axes_lengths), ndim=len(shape))
+  File "/mnt/banana/student/khanh/nnk/lib/python3.9/site-packages/einops/einops.py", line 365, in _prepare_transformation_recipe
+    raise EinopsError(f"Wrong shape: expected {len(left.composition)} dims. Received {ndim}-dim tensor.")
+einops.EinopsError: Wrong shape: expected 3 dims. Received 2-dim tensor.
+During handling of the above exception, another exception occurred:
+Traceback (most recent call last):
+  File "/mnt/banana/student/khanh/iKUN-v2/train.py", line 93, in <module>
+    logits = model(inputs, epoch)['logits']
+  File "/mnt/banana/student/khanh/nnk/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1130, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/banana/student/khanh/nnk/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py", line 166, in forward
+    return self.module(*inputs[0], **kwargs[0])
+  File "/mnt/banana/student/khanh/nnk/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1130, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/banana/student/khanh/iKUN-v2/model26.py", line 247, in forward
+    fused_feat = self.visual_fuse(
+  File "/mnt/banana/student/khanh/iKUN-v2/model26.py", line 303, in visual_fuse
+    pos_feat = rearrange(pos_feat, 'b t c -> (b t) c')[None,:,:]
+  File "/mnt/banana/student/khanh/nnk/lib/python3.9/site-packages/einops/einops.py", line 591, in rearrange
+    return reduce(tensor, pattern, reduction="rearrange", **axes_lengths)
+  File "/mnt/banana/student/khanh/nnk/lib/python3.9/site-packages/einops/einops.py", line 533, in reduce
+    raise EinopsError(message + "\n {}".format(e))
+einops.EinopsError:  Error while processing rearrange-reduction pattern "b t c -> (b t) c".
+ Input tensor shape: torch.Size([16, 1024]). Additional info: {}.
+ Wrong shape: expected 3 dims. Received 2-dim tensor.

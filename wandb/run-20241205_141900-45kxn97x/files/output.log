@@ -1,0 +1,24 @@
+
+torch.Size([1, 16, 1024])
+Traceback (most recent call last):
+  File "/mnt/banana/student/khanh/iKUN-v2/train.py", line 93, in <module>
+    logits = model(inputs, epoch)['logits']
+  File "/mnt/banana/student/khanh/nnk/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1130, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/banana/student/khanh/nnk/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py", line 166, in forward
+    return self.module(*inputs[0], **kwargs[0])
+  File "/mnt/banana/student/khanh/nnk/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1130, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/banana/student/khanh/iKUN-v2/model26.py", line 247, in forward
+    fused_feat = self.visual_fuse(
+  File "/mnt/banana/student/khanh/iKUN-v2/model26.py", line 306, in visual_fuse
+    fused_feat = self.cross_modal_fusion(
+  File "/mnt/banana/student/khanh/iKUN-v2/model26.py", line 281, in cross_modal_fusion
+    fused_feat = layer(
+  File "/mnt/banana/student/khanh/nnk/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1130, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/banana/student/khanh/nnk/lib/python3.9/site-packages/torch/nn/modules/activation.py", line 1153, in forward
+    attn_output, attn_output_weights = F.multi_head_attention_forward(
+  File "/mnt/banana/student/khanh/nnk/lib/python3.9/site-packages/torch/nn/functional.py", line 5122, in multi_head_attention_forward
+    k = k.contiguous().view(k.shape[0], bsz * num_heads, head_dim).transpose(0, 1)
+RuntimeError: shape '[10, 64, 256]' is invalid for input of size 327680

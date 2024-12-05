@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/mnt/banana/student/khanh/iKUN-v2/train.py", line 93, in <module>
+    logits = model(inputs, epoch)['logits']
+  File "/mnt/banana/student/khanh/nnk/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1130, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/banana/student/khanh/nnk/lib/python3.9/site-packages/torch/nn/parallel/data_parallel.py", line 166, in forward
+    return self.module(*inputs[0], **kwargs[0])
+  File "/mnt/banana/student/khanh/nnk/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1130, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/mnt/banana/student/khanh/iKUN-v2/model26.py", line 247, in forward
+    fused_feat = self.visual_fuse(
+  File "/mnt/banana/student/khanh/iKUN-v2/model26.py", line 298, in visual_fuse
+    bbox = torch.cat([coor, delta, bbox[:, bbox.shape[1]-1, 4][None, :]], dim=1)
+RuntimeError: Sizes of tensors must match except in dimension 1. Expected size 16 but got size 1 for tensor number 2 in the list.
