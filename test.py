@@ -16,9 +16,32 @@ warnings.filterwarnings('ignore')
 from opts import opt
 
 from utils import *
-
+from model0 import get_model_0
+from model1 import get_model_1
+from model2 import get_model_2
+from model3 import get_model_3
+from model4 import get_model_4
+from model5 import get_model_5
+from model6 import get_model_6
+from model7 import get_model_7
+from model8 import get_model_8
+from model9 import get_model_9
+from model10 import get_model_10
+from model11 import get_model_11
+from model12 import get_model_12
+from model13 import get_model_13
+from model14 import get_model_14
+from model15 import get_model_15
+from model16 import get_model_16
+from model17 import get_model_17
+from model18 import get_model_18
+from model19 import get_model_19
+from model20 import get_model_20
+from model21 import get_model_21
+from model22 import get_model_22
+from model23 import get_model_23
+from model24 import get_model_24
 from model25 import get_model_25
-from model26 import get_model_26
 
 from dataloader import get_dataloader, get_transform
 from similarity_calibration import similarity_calibration
@@ -162,7 +185,6 @@ def generate_final_results(cls_dict, data_dir, track_dir, save_dir, thr_score=0.
     for video in os.listdir(template_dir):
         if video not in cls_dict:
             continue
-        print(video)
         video_dir_in = join(template_dir, video)
         video_dir_out = join(save_dir, video)
         MIN_FRAME, MAX_FRAME = FRAMES[video]
